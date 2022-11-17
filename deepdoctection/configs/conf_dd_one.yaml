@@ -6,6 +6,7 @@ CONFIG:
   D2CELL: dd/d2/cell/CASCADE_RCNN_R_50_FPN_GN.yaml
   D2ITEM: dd/d2/item/CASCADE_RCNN_R_50_FPN_GN.yaml
   TESS_OCR: dd/conf_tesseract.yaml
+  VISION_OCR: dd/conf_vision.yaml
 WEIGHTS:
   TPLAYOUT: layout/model-800000_inf_only.data-00000-of-00001
   TPCELL: cell/model-1800000_inf_only.data-00000-of-00001

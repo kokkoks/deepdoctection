@@ -100,3 +100,4 @@ urllib3==1.26.8
     # via requests
 zipp==3.7.0
     # via importlib-metadata
+python-dotenv==0.21.0

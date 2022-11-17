@@ -25,6 +25,7 @@ from typing import List, Optional, Tuple, Union
 
 from ..extern.model import ModelCatalog, ModelDownloadManager
 from ..extern.tessocr import TesseractOcrDetector
+from ..extern.visionocr import VisionOcrDetector
 from ..pipe.base import PipelineComponent
 from ..pipe.cell import SubImageLayoutService
 from ..pipe.common import MatchingService
@@ -56,6 +57,7 @@ __all__ = ["get_dd_analyzer", "build_analyzer"]
 
 _DD_ONE = "deepdoctection/configs/conf_dd_one.yaml"
 _TESSERACT = "deepdoctection/configs/conf_tesseract.yaml"
+_VISION = "deepdoctection/configs/conf_vision.yaml"
 
 
 def _auto_select_lib_and_device() -> Tuple[str, str]:
@@ -183,11 +185,11 @@ def build_analyzer(cfg: AttrDict) -> DoctectionPipe:
 
     # setup ocr
     if cfg.OCR:
-
-        tess_ocr_config_path = get_configs_dir_path() / cfg.CONFIG.TESS_OCR
-        d_tess_ocr = TesseractOcrDetector(
-            tess_ocr_config_path, config_overwrite=[f"LANGUAGES={cfg.LANG}"] if cfg.LANG is not None else None
-        )
+        tess_ocr_config_path = get_configs_dir_path() / cfg.CONFIG.VISION_OCR
+        # d_tess_ocr = TesseractOcrDetector(
+        #     tess_ocr_config_path, config_overwrite=[f"LANGUAGES={cfg.LANG}"] if cfg.LANG is not None else None
+        # )
+        d_tess_ocr = VisionOcrDetector(tess_ocr_config_path)
         text = TextExtractionService(d_tess_ocr)
         pipe_component_list.append(text)
 
@@ -256,7 +258,8 @@ def get_dd_analyzer(
     lib, device = _auto_select_lib_and_device()
     dd_one_config_path = _maybe_copy_config_to_cache(_DD_ONE)
     _maybe_copy_config_to_cache(_TESSERACT)
-
+    _maybe_copy_config_to_cache(_VISION)
+    
     # Set up of the configuration and logging
     cfg = set_config_by_yaml(dd_one_config_path)
 

@@ -99,7 +99,6 @@ def _input_to_cli_str(lang: str, config: str, nice: int, input_file_name: str, o
         cmd_args += shlex.split(config)
 
     cmd_args.append("tsv")
-
     return cmd_args
 
 
@@ -136,14 +135,41 @@ def image_to_dict(image: ImageType, lang: str, config: str) -> Dict[str, List[Un
     :param config: string of configs
     :return: Dictionary with keys 'left', 'top', 'width', 'height' (bounding box coords), 'conf' (confidence), 'text'
              (captured text), 'block_num' (block number) and 'lin_num' (line number).
+    
+    ref: https://stackoverflow.com/questions/61461520/does-anyone-knows-the-meaning-of-output-of-image-to-data-image-to-osd-methods-o
+    level = 1/2/3/4/5，the level of current item.
+    page_num: the page index of the current item. In most instances, a image only has one page.
+    : the block item of the current item. when tesseract OCR Image, it will split the image into several blocks according the PSM parameters and some rules. The words in a line often in a block.
+    par_num: The paragraph index of the current item. It is the page analysis results. line_num: The line index of the current item. It is the page analysis results. word_num: The word index in one block.
+    line_num: The line index of the current item. It is the page analysis results.
+    word_num: The word index in one block.
+        left/top/width/height：the top-left coordinate and the width and height of the current word.
+    conf: the confidence of the current word, the range is -1~100.. The -1 means that there is no text here. The 100 is the highest value.
+    text: the word ocr results.
+
+    Column Level:
+        Item with no block_num, paragraph_num, line_num, word_num
+        Item with block_num and with no paragraph_num, line_num, word_num
+        Item with block_num, paragraph_num and with no line_num, word_num
+        Item with block_num, paragraph_num, line_num, and with no word_num
+        Item with all those numbers
+    Column block_num: Block number of the detected text or item
+    Column par_num: Paragraph number of the detected text or item
+    Column line_num: Line number of the detected text or item
+    Column word_num: word number of the detected text or item
     """
 
     with save_tmp_file(image, "tess_") as (tmp_name, input_file_name):
         _run_tesseract(_input_to_cli_str(lang, config, 0, input_file_name, tmp_name))
         with open(tmp_name + ".tsv", "rb") as output_file:
             output = output_file.read().decode("utf-8")
+
+            with open("debug_text_result.txt", "w") as f:
+                f.write(output)
+
         result: Dict[str, List[Union[str, int, float]]] = {}
         rows = [row.split("\t") for row in output.strip().split("\n")]
+
         if len(rows) < 2:
             return result
         header = rows.pop(0)
@@ -223,7 +249,6 @@ def predict_text(np_img: ImageType, supported_languages: str, text_lines: bool, 
     np_img = np_img.astype(np.uint8)
     results = image_to_dict(np_img, supported_languages, config)
     all_results = []
-
     for caption in zip(
         results["left"],
         results["top"],
@@ -234,6 +259,15 @@ def predict_text(np_img: ImageType, supported_languages: str, text_lines: bool, 
         results["block_num"],
         results["line_num"],
     ):
+    # ("left", "top", "width", "height", "conf", "text", "block_num", "line_num") 
+    # (0     , 0    , 2550   , 3301    , '-1'  , ''    , 0          , 0)
+    # (299   , 49   , 515    , 31      , '-1'  , ''    , 1          , 0)
+    # (299   , 49   , 515    , 31      , '-1'  , ''    , 1          , 0)
+    # (774   , 63   , 13     , 17      , 93    , 'ก'   , 1          , 1)
+    # (791   , 63   , 8      , 17      , 93    , 'า'   , 1          , 1)
+    # (802   , 63   , 12     , 17      , 97    , 'ร'   , 1          , 1)
+    # (1852  , 61   , 128    , 20      , '-1'  , ''    , 2          , 0)
+    # (1852  , 61   , 128    , 20      , '-1'  , ''    , 2          , 0)
         score = float(caption[4])
         if int(score) != -1:
             word = DetectionResult(
@@ -246,6 +280,7 @@ def predict_text(np_img: ImageType, supported_languages: str, text_lines: bool, 
                 class_name=LayoutType.word,
             )
             all_results.append(word)
+    print(all_results)
     if text_lines:
         all_results = tesseract_line_to_detectresult(all_results)
     return all_results

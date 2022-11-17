@@ -441,6 +441,7 @@ _SKLEARN_ERR_MSG = "scikit-learn must be installed. >> pip install scikit-learn=
 
 def sklearn_available() -> bool:
     """
+
     Returns True if sklearn is installed
     """
     return bool(_SKLEARN_AVAILABLE)
@@ -500,6 +501,12 @@ def get_aws_requirement() -> Requirement:
     """
     return "aws", aws_available(), _AWS_ERR_MSG
 
+def get_google_cloud_requirements() -> Requirement:
+    """
+    Return Google requirement
+    """
+    # TODO: Update requirement
+    return "google", True, "no error"
 
 # DocTr related dependencies
 _DOCTR_AVAILABLE = importlib.util.find_spec("doctr") is not None

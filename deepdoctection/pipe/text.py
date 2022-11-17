@@ -111,6 +111,14 @@ class TextExtractionService(PredictorPipelineComponent):
                 width, height = self.predictor.get_width_height(predictor_input)  # type: ignore
 
             for detect_result in detect_result_list:
+                # DetectionResult(box=[570, 63, 580, 80], class_id=1, score=0.93, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='ร', block='1', line='1', uuid=None)
+                # DetectionResult(box=[586, 63, 594, 80], class_id=1, score=0.93, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='า', block='1', line='1', uuid=None)
+                # DetectionResult(box=[791, 63, 799, 80], class_id=1, score=0.93, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='า', block='1', line='1', uuid=None)
+                # DetectionResult(box=[802, 63, 814, 80], class_id=1, score=0.97, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='ร', block='1', line='1', uuid=None)
+                # DetectionResult(box=[1852, 61, 1890, 81], class_id=1, score=0.95, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='CV', block='2', line='1', uuid=None)
+                # DetectionResult(box=[1900, 61, 1964, 81], class_id=1, score=0.87, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='Code', block='2', line='1', uuid=None)
+                # DetectionResult(box=[1977, 67, 1980, 81], class_id=1, score=0.87, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text=':', block='2', line='1', uuid=None)
+                # DetectionResult(box=[698, 166, 718, 192], class_id=1, score=0.97, mask=None, absolute_coords=True, class_name=<LayoutType.word>, text='บ', block='3', line='1', uuid=None)
                 if isinstance(self.predictor, TextRecognizer):
                     detect_ann_id = detect_result.uuid
                 else:
