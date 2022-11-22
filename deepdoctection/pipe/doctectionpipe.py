@@ -196,7 +196,6 @@ class DoctectionPipe(Pipeline):
         :param kwargs key max_datapoints: Stops processing as soon as max_datapoints images have been processed
         :return: dataflow
         """
-
         output = kwargs.get("output", "page")
         assert output in ("page", "image", "dict"), "output must be either page image or dict"
         df = self._entry(**kwargs)

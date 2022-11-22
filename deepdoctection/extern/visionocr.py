@@ -36,7 +36,7 @@ import cv2
 load_dotenv()
 
 GOOGLE_SERVICE_ACCOUNT_PATH = environ["GOOGLE_SERVICE_ACCOUNT_PATH"]
-environ["GOOGLE_APPLICATION_CREDENTIALS"]=GOOGLE_SERVICE_ACCOUNT_PATH
+environ["GOOGLE_APPLICATION_CREDENTIALS"] = GOOGLE_SERVICE_ACCOUNT_PATH
 class GoogleCloudVisionError(RuntimeError):
     """
     Google Cloud Vision Error
@@ -50,6 +50,7 @@ class GoogleCloudVisionError(RuntimeError):
 
 
 class VisionOcrDetector(ObjectDetector):
+    # TODO: Write good document
     def __init__(
         self,
         path_yaml: str

@@ -164,7 +164,25 @@ class Layout(ImageAnnotationBaseView):
         """
         words_with_reading_order = [word for word in self.words if word.reading_order is not None]
         words_with_reading_order.sort(key=lambda x: x.reading_order)  # type: ignore
-        return " ".join([word.characters for word in words_with_reading_order])  # type: ignore
+        # for word in words_with_reading_order:
+        #     print(f"{word.characters}: {word.bbox}")
+        # return " ".join([word.characters for word in words_with_reading_order])  # type: ignore
+        # TODO: update logic and add new line
+        result = ""
+        min_width = max(min([word.bbox[2]-word.bbox[0] for word in words_with_reading_order]), 1)
+        for idx, word in enumerate(words_with_reading_order):
+            x1, y1, x2, y2 = word.bbox[0], word.bbox[1], word.bbox[2], word.bbox[3]
+            prev_x2, prev_y2 = words_with_reading_order[idx-1].bbox[2], words_with_reading_order[idx-1].bbox[3]
+            if idx == 0:
+                result += word.characters
+            elif y1 > prev_y2:
+                result += "\n" + word.characters
+            elif x1 - prev_x2 < min_width:
+                result += word.characters
+            else:
+                result += " " + word.characters
+        return result
+
 
     def get_attribute_names(self) -> Set[str]:
         return {"words", "text"}.union(super().get_attribute_names()).union({Relationships.reading_order})
@@ -302,7 +320,6 @@ class Page(Image):
         ann_types = [annotation_types] if isinstance(annotation_types, str) else annotation_types
 
         anns = filter(lambda x: x.active, self.annotations)
-
         if ann_types is not None:
             for type_name in ann_types:
                 anns = filter(lambda x: isinstance(x, eval(type_name)), anns)  # pylint: disable=W0123, W0640
@@ -312,7 +329,6 @@ class Page(Image):
 
         if ann_ids is not None:
             anns = filter(lambda x: x.annotation_id in ann_ids, anns)
-
         return list(anns)
 
     def __getattr__(self, item: str) -> Any:
