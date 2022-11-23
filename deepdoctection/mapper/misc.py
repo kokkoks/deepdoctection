@@ -30,6 +30,7 @@ from ..utils.file_utils import lxml_available
 from ..utils.fs import get_load_image_func, load_image_from_file
 from ..utils.utils import is_file_extension
 from .maputils import MappingContextManager, curry
+import numpy as np
 
 if lxml_available():
     from lxml import etree  # pylint: disable=W0611
@@ -46,7 +47,7 @@ def to_image(dp: Union[str, Mapping[str, Union[str, bytes]]], dpi: Optional[int]
 
     file_name: Optional[str]
     location: Optional[str]
-
+    is_np = False
     if isinstance(dp, str):
         _, file_name = os.path.split(dp)
         location = dp
@@ -56,6 +57,10 @@ def to_image(dp: Union[str, Mapping[str, Union[str, bytes]]], dpi: Optional[int]
         if location == "":
             location = str(dp.get("path", ""))
             location = os.path.join(location, file_name)
+    elif isinstance(dp, np.ndarray):
+        file_name = ""
+        location = ""
+        is_np = True
     else:
         raise TypeError("datapoint not of expected type for converting to image")
 
@@ -67,6 +72,8 @@ def to_image(dp: Union[str, Mapping[str, Union[str, bytes]]], dpi: Optional[int]
                 if dp_image.pdf_bytes is not None:
                     if isinstance(dp_image.pdf_bytes, bytes):
                         dp_image.image = convert_pdf_bytes_to_np_array_v2(dp_image.pdf_bytes, dpi=dpi)
+            elif is_np:
+                dp_image.image = dp
             else:
                 dp_image.image = load_image_from_file(location)
 

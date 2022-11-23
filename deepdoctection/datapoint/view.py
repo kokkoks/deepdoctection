@@ -167,22 +167,24 @@ class Layout(ImageAnnotationBaseView):
         # for word in words_with_reading_order:
         #     print(f"{word.characters}: {word.bbox}")
         # return " ".join([word.characters for word in words_with_reading_order])  # type: ignore
+        return self._join_words(words_with_reading_order)
+
+    def _join_words(self, ordered_words, space_ratio = 23) -> str:
         # TODO: update logic and add new line
         result = ""
-        min_width = max(min([word.bbox[2]-word.bbox[0] for word in words_with_reading_order]), 1)
-        for idx, word in enumerate(words_with_reading_order):
+        for idx, word in enumerate(ordered_words):
             x1, y1, x2, y2 = word.bbox[0], word.bbox[1], word.bbox[2], word.bbox[3]
-            prev_x2, prev_y2 = words_with_reading_order[idx-1].bbox[2], words_with_reading_order[idx-1].bbox[3]
+            prev_x2, prev_y2 = ordered_words[idx-1].bbox[2], ordered_words[idx-1].bbox[3]
+            should_add_space = (x1 - prev_x2)/(y2-y1)*100 > space_ratio
             if idx == 0:
                 result += word.characters
             elif y1 > prev_y2:
                 result += "\n" + word.characters
-            elif x1 - prev_x2 < min_width:
-                result += word.characters
-            else:
+            elif should_add_space:
                 result += " " + word.characters
+            else:
+                result += word.characters
         return result
-
 
     def get_attribute_names(self) -> Set[str]:
         return {"words", "text"}.union(super().get_attribute_names()).union({Relationships.reading_order})
