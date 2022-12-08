@@ -78,7 +78,12 @@ class OCRDetector():
         self.text_ordering.serve(image)
 
         page = self.page_parser.pass_datapoint(self.text_ordering.dp_manager.datapoint)
-        df = pd.read_html(page.tables[0].html)[0]
+        page = self.page_parser.pass_datapoint(self.text_ordering.dp_manager.datapoint)
+        df = None
+        try:
+            df = pd.read_html(page.tables[0].html)[0]
+        except:
+            df = None
         return df, page
 
     def _init_image_layout_service(self, cfg) -> ImageLayoutService:

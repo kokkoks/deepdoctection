@@ -179,7 +179,7 @@ class Layout(ImageAnnotationBaseView):
             if idx == 0:
                 result += word.characters
             elif y1 > prev_y2:
-                result += "\n" + word.characters
+                result += "<br>" + word.characters
             elif should_add_space:
                 result += " " + word.characters
             else:
