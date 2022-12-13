@@ -8,14 +8,13 @@ from deepdoctection.pipe.cell import SubImageLayoutService
 from deepdoctection.utils.settings import CellType, LayoutType
 from deepdoctection.pipe.refine import TableSegmentationRefinementService
 from deepdoctection.pipe.segment import TableSegmentationService
-
+from deepdoctection.extern.base import DetectionResult
 from deepdoctection.extern.visionocr import VisionOcrDetector
 from deepdoctection.pipe.text import TextExtractionService, TextOrderService
 from deepdoctection.pipe.common import MatchingService
 from deepdoctection.mapper.misc import to_image
 from deepdoctection.datapoint.image import Image
-from typing import Optional
-
+from typing import Optional, List
 # from IPython.core.display import HTML
 # import os
 from deepdoctection.pipe.common import PageParsingService
@@ -43,18 +42,23 @@ class OCRDetector():
         self.layout = self._init_image_layout_service(self.cfg)
         self.cell = self._init_cell_layout_service(self.cfg)
         self.item = self._init_item_layout_service(self.cfg)
+        self.text_extraction = self._init_text_extraction_service(self.cfg)
         self.table_segmentation = self._init_table_segmentation_service(self.cfg)
         self.table_segmentation_refinement = TableSegmentationRefinementService()
-        self.text_extraction = self._init_text_extraction_service(self.cfg)
         self.text_matching = self._init_text_matching_service(self.cfg)
         self.text_ordering = self._init_text_order_service(self.cfg)
         self.page_parser = self._init_page_parser_service()
 
-    def predict(self, np_img: np.ndarray) -> pd.DataFrame:
+    def predict(self, np_img: np.ndarray, table_detection_results: List[List[str]] = None) -> pd.DataFrame:
         image = to_image(np_img)
 
+        
         self.layout.dp_manager.datapoint = image
-        self.layout.serve(image)
+        if table_detection_results:
+            detection_result_list = self._convert_bbox_to_detection_list(table_detection_results)
+            self.layout.serve(image, detect_result_list=detection_result_list)
+        else:
+            self.layout.serve(image)
 
         self.cell.dp_manager.datapoint = self.layout.dp_manager.datapoint
         self.cell.serve(image)
@@ -78,7 +82,6 @@ class OCRDetector():
         self.text_ordering.serve(image)
 
         page = self.page_parser.pass_datapoint(self.text_ordering.dp_manager.datapoint)
-        page = self.page_parser.pass_datapoint(self.text_ordering.dp_manager.datapoint)
         df = None
         try:
             df = pd.read_html(page.tables[0].html)[0]
@@ -86,6 +89,22 @@ class OCRDetector():
             df = None
         return df, page
 
+    def _convert_bbox_to_detection_list(self, bboxes: List[List[float]]) -> List[DetectionResult]:
+        # {'0': <LayoutType.text>, '1': <LayoutType.title>, '2': <LayoutType.list>, '3': <LayoutType.table>, '4': <LayoutType.figure>}
+        # [[100.0, 100.0, 200.0, 200.0, 0.98]]
+        detection_result_list = []
+        for bbox in bboxes:
+            x1, y1, x2, y2, conf = bbox[0], bbox[1], bbox[2], bbox[3], bbox[4]
+            detection_result = DetectionResult(
+                box=[x1, y1, x2, y2], 
+                class_id=4, 
+                score=conf, 
+                mask=None, 
+                absolute_coords=True, 
+                class_name=LayoutType.table, text=None, block=None, line=None, uuid=None)
+            detection_result_list.append(detection_result)
+        return detection_result_list
+        
     def _init_image_layout_service(self, cfg) -> ImageLayoutService:
         layout_config_path = ModelCatalog.get_full_path_configs(cfg.CONFIG.D2LAYOUT)
         layout_weights_path = ModelDownloadManager.maybe_download_weights_and_configs(cfg.WEIGHTS.D2LAYOUT)
@@ -118,12 +137,8 @@ class OCRDetector():
     def _init_table_segmentation_service(self, cfg) -> TableSegmentationService:
         return TableSegmentationService(
             cfg.SEGMENTATION.ASSIGNMENT_RULE,
-            cfg.SEGMENTATION.IOU_THRESHOLD_ROWS
-            if cfg.SEGMENTATION.ASSIGNMENT_RULE in ["iou"]
-            else cfg.SEGMENTATION.IOA_THRESHOLD_ROWS,
-            cfg.SEGMENTATION.IOU_THRESHOLD_COLS
-            if cfg.SEGMENTATION.ASSIGNMENT_RULE in ["iou"]
-            else cfg.SEGMENTATION.IOA_THRESHOLD_COLS,
+            cfg.SEGMENTATION.IOU_THRESHOLD_ROWS if cfg.SEGMENTATION.ASSIGNMENT_RULE in ["iou"] else cfg.SEGMENTATION.IOA_THRESHOLD_ROWS,
+            cfg.SEGMENTATION.IOU_THRESHOLD_COLS if cfg.SEGMENTATION.ASSIGNMENT_RULE in ["iou"] else cfg.SEGMENTATION.IOA_THRESHOLD_COLS,
             cfg.SEGMENTATION.FULL_TABLE_TILING,
             cfg.SEGMENTATION.REMOVE_IOU_THRESHOLD_ROWS,
             cfg.SEGMENTATION.REMOVE_IOU_THRESHOLD_COLS,

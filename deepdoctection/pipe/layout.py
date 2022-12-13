@@ -20,11 +20,11 @@ Module for layout pipeline component
 """
 
 from ..datapoint.image import Image
-from ..extern.base import ObjectDetector, PdfMiner
+from ..extern.base import ObjectDetector, PdfMiner, DetectionResult
 from ..utils.detection_types import JsonDict
 from .base import PredictorPipelineComponent
 from .registry import pipeline_component_registry
-
+from typing import List
 
 @pipeline_component_registry.register("ImageLayoutService")
 class ImageLayoutService(PredictorPipelineComponent):
@@ -63,9 +63,10 @@ class ImageLayoutService(PredictorPipelineComponent):
         self.crop_image = crop_image
         super().__init__(self._get_name(layout_detector.name), layout_detector)
 
-    def serve(self, dp: Image) -> None:
+    def serve(self, dp: Image, detect_result_list: List[DetectionResult] = None) -> None:
         assert dp.image is not None
-        detect_result_list = self.predictor.predict(dp.image)  # type: ignore
+        if detect_result_list is None:
+            detect_result_list = self.predictor.predict(dp.image)  # type: ignore
         for detect_result in detect_result_list:
             self.dp_manager.set_image_annotation(detect_result, to_image=self.to_image, crop_image=self.crop_image)
 
