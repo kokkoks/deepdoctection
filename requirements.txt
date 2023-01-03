@@ -101,3 +101,4 @@ urllib3==1.26.8
 zipp==3.7.0
     # via importlib-metadata
 python-dotenv==0.21.0
+google-cloud-vision==3.2.0
