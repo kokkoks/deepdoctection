@@ -14,6 +14,8 @@ from deepdoctection.pipe.text import TextExtractionService, TextOrderService
 from deepdoctection.pipe.common import MatchingService
 from deepdoctection.mapper.misc import to_image
 from deepdoctection.datapoint.image import Image
+from deepdoctection.utils.settings import LayoutType, WordType, CellType, Relationships
+import copy
 from typing import Optional, List
 # from IPython.core.display import HTML
 # import os
@@ -50,44 +52,87 @@ class OCRDetector():
         self.page_parser = self._init_page_parser_service()
 
     def predict(self, np_img: np.ndarray, table_detection_results: List[List[str]] = None) -> pd.DataFrame:
-        image = to_image(np_img)
+        #TODO: RGB to BGR
+        dp_image = to_image(np_img)
 
-        
-        self.layout.dp_manager.datapoint = image
+        self.layout.dp_manager.datapoint = dp_image
         if table_detection_results:
             detection_result_list = self._convert_bbox_to_detection_list(table_detection_results)
-            self.layout.serve(image, detect_result_list=detection_result_list)
+            self.layout.serve(dp_image, detect_result_list=detection_result_list)
         else:
-            self.layout.serve(image)
+            self.layout.serve(dp_image)
 
         self.cell.dp_manager.datapoint = self.layout.dp_manager.datapoint
-        self.cell.serve(image)
+        self.cell.serve(self.layout.dp_manager.datapoint)
 
-        self.item.dp_manager.datapoint = self.cell.dp_manager.datapoint
-        self.item.serve(image)
+        self.item.dp_manager.datapoint = dp_image
+        self.item.serve(dp_image)
 
         self.text_extraction.dp_manager.datapoint = self.item.dp_manager.datapoint
         self.text_extraction.serve(self.item.dp_manager.datapoint)
 
-        self.table_segmentation.dp_manager.datapoint = self.text_extraction.dp_manager.datapoint
-        self.table_segmentation.serve(self.text_extraction.dp_manager.datapoint)
+        self.table_segmentation.dp_manager.datapoint = dp_image
+        raw_table_segment_list = self.table_segmentation.serve(dp_image)
 
-        self.table_segmentation_refinement.dp_manager.datapoint = self.table_segmentation.dp_manager.datapoint
-        self.table_segmentation_refinement.serve(self.table_segmentation.dp_manager.datapoint)
+        self.table_segmentation_refinement.dp_manager.datapoint = dp_image
+        self.table_segmentation_refinement.serve(dp_image)
+        
+        self.text_matching.dp_manager.datapoint = dp_image
+        self.text_matching.serve(dp_image)
+        
+        self.text_ordering.dp_manager.datapoint = dp_image
+        self.text_ordering.serve(dp_image)
 
-        self.text_matching.dp_manager.datapoint = self.table_segmentation_refinement.dp_manager.datapoint
-        self.text_matching.serve(image)
+        page = self.page_parser.pass_datapoint(dp_image)
 
-        self.text_ordering.dp_manager.datapoint = self.text_matching.dp_manager.datapoint
-        self.text_ordering.serve(image)
+        dfs = [self._convert_table_segments_to_df(dp_image, raw_table_segments) for raw_table_segments in raw_table_segment_list]
+        # df = None
+        # try:
+        #     df = pd.read_html(page.tables[0].html)[0]
+        # except:
+        #     df = None
 
-        page = self.page_parser.pass_datapoint(self.text_ordering.dp_manager.datapoint)
-        df = None
-        try:
-            df = pd.read_html(page.tables[0].html)[0]
-        except:
-            df = None
-        return df, page
+        return page, dfs
+
+    def _convert_table_segments_to_df(self, dp_image, table_segments):
+        _table_segments = copy.deepcopy(table_segments)
+        sorted_table_segments = sorted(_table_segments, key = lambda x: (int(x.row_num), int(x.col_num)))
+        max_row = max([int(item.row_num) for item in sorted_table_segments])
+        max_col = max([int(item.col_num) for item in sorted_table_segments])
+        table_arr = [[None for i in range(max_col)] for j in range(max_row)]
+
+        for table_segment in sorted_table_segments:
+            anns = dp_image.get_annotation(annotation_ids=table_segment.annotation_id)
+            for ann in anns:
+                text_container_ann_ids = ann.get_relationship(Relationships.child)
+                text_container_anns = dp_image.get_annotation(
+                    annotation_ids=text_container_ann_ids,
+                    category_names=LayoutType.word,
+                )
+                _row = int(table_segment.row_num) - 1
+                _col = int(table_segment.col_num) - 1
+                text = self._join_words(text_container_anns)
+                table_arr[_row][_col] = text
+        return pd.DataFrame(table_arr)
+
+    def _join_words(self, text_container_anns, space_ratio = 23) -> str:
+        result = ""
+        for idx, text_container_ann in enumerate(text_container_anns):
+            word_bbox = text_container_ann.bounding_box
+            prev_word_bbox = text_container_anns[idx-1].bounding_box
+            word = text_container_ann.sub_categories[WordType.characters].value
+            x1, y1, x2, y2 = word_bbox.ulx, word_bbox.uly, word_bbox.lrx, word_bbox.lry
+            prev_x2, prev_y2 = prev_word_bbox.lrx, prev_word_bbox.lry
+            should_add_space = (x1 - prev_x2)/(y2-y1)*100 > space_ratio
+            if idx == 0:
+                result += word
+            elif y1 > prev_y2:
+                result += "\n" + word
+            elif should_add_space:
+                result += " " + word
+            else:
+                result += word
+        return result
 
     def _convert_bbox_to_detection_list(self, bboxes: List[List[float]]) -> List[DetectionResult]:
         # {'0': <LayoutType.text>, '1': <LayoutType.title>, '2': <LayoutType.list>, '3': <LayoutType.table>, '4': <LayoutType.figure>}

@@ -141,6 +141,7 @@ def stretch_item_per_table(
     table_embedding_box = table.image.get_embedding(dp.image_id)
 
     for row in rows:
+        # pass by ref
         if row.image is None:
             raise ValueError("row.image cannot be None")
         row_embedding_box = row.image.get_embedding(dp.image_id)
@@ -349,6 +350,7 @@ def segment_table(
         True,
         child_ann_ids,
         child_ann_ids,
+        max_parent_only = True
     )
 
     cell_index_cols, col_index, _, _ = match_anns_by_intersection(
@@ -360,6 +362,7 @@ def segment_table(
         True,
         child_ann_ids,
         child_ann_ids,
+        max_parent_only = True
     )
 
     cells = dp.get_annotation(annotation_ids=child_ann_ids, category_names=cell_names)
@@ -475,6 +478,8 @@ class TableSegmentationService(PipelineComponent):
             self.remove_iou_threshold_cols,
         )
         table_anns = dp.get_annotation(category_names=self._table_name)
+
+        raw_table_segment_list = []
         for table in table_anns:
             item_ann_ids = table.get_relationship(Relationships.child)
             for item_sub_item_name in zip(self._item_names, self._sub_item_names):  # one pass for rows and one for cols
@@ -520,6 +525,9 @@ class TableSegmentationService(PipelineComponent):
                 self.dp_manager.set_category_annotation(
                     CellType.column_span, segment_result.cs, CellType.column_span, segment_result.annotation_id
                 )
+            raw_table_segment_list.append(raw_table_segments)
+
+        return raw_table_segment_list
 
     def clone(self) -> PipelineComponent:
         return self.__class__(
