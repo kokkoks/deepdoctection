@@ -103,3 +103,4 @@ zipp==3.7.0
 python-dotenv==0.21.0
 google-cloud-vision==3.2.0
 fastapi==0.87.0
+pandas==1.5.2

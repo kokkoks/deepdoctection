@@ -17,8 +17,6 @@ from deepdoctection.datapoint.image import Image
 from deepdoctection.utils.settings import LayoutType, WordType, CellType, Relationships
 import copy
 from typing import Optional, List
-# from IPython.core.display import HTML
-# import os
 from deepdoctection.pipe.common import PageParsingService
 import numpy as np
 import pandas as pd
@@ -29,7 +27,7 @@ _VISION = "deepdoctection/configs/conf_vision.yaml"
 class OCRDetector():
     def __init__(self):
         lib, device = _auto_select_lib_and_device()
-        dd_one_config_path = _maybe_copy_config_to_cache(_DD_ONE)
+        dd_one_config_path = _DD_ONE
         _maybe_copy_config_to_cache(_VISION)
 
         self.cfg = set_config_by_yaml(dd_one_config_path)
@@ -86,11 +84,6 @@ class OCRDetector():
         page = self.page_parser.pass_datapoint(dp_image)
 
         dfs = [self._convert_table_segments_to_df(dp_image, raw_table_segments) for raw_table_segments in raw_table_segment_list]
-        # df = None
-        # try:
-        #     df = pd.read_html(page.tables[0].html)[0]
-        # except:
-        #     df = None
 
         return page, dfs
 
@@ -151,8 +144,8 @@ class OCRDetector():
         return detection_result_list
         
     def _init_image_layout_service(self, cfg) -> ImageLayoutService:
-        layout_config_path = ModelCatalog.get_full_path_configs(cfg.CONFIG.D2LAYOUT)
-        layout_weights_path = ModelDownloadManager.maybe_download_weights_and_configs(cfg.WEIGHTS.D2LAYOUT)
+        layout_config_path = cfg.CONFIG.D2LAYOUT
+        layout_weights_path = cfg.WEIGHTS.D2LAYOUT
         profile = ModelCatalog.get_profile(cfg.WEIGHTS.D2LAYOUT)
         categories_layout = profile.categories
         d_layout = D2FrcnnDetector(layout_config_path, layout_weights_path, categories_layout, device=cfg.DEVICE)
@@ -160,8 +153,8 @@ class OCRDetector():
         return layout
 
     def _init_cell_layout_service(self, cfg) -> SubImageLayoutService:
-        cell_config_path = ModelCatalog.get_full_path_configs(cfg.CONFIG.D2CELL)
-        cell_weights_path = ModelDownloadManager.maybe_download_weights_and_configs(cfg.WEIGHTS.D2CELL)
+        cell_config_path = cfg.CONFIG.D2CELL
+        cell_weights_path = cfg.WEIGHTS.D2CELL
         profile = ModelCatalog.get_profile(cfg.WEIGHTS.D2CELL)
         categories_cell = profile.categories
         d_cell = D2FrcnnDetector(cell_config_path, cell_weights_path, categories_cell, device=cfg.DEVICE)
@@ -170,8 +163,8 @@ class OCRDetector():
         return cell
 
     def _init_item_layout_service(self, cfg) -> SubImageLayoutService:
-        item_config_path = ModelCatalog.get_full_path_configs(cfg.CONFIG.D2ITEM)
-        item_weights_path = ModelDownloadManager.maybe_download_weights_and_configs(cfg.WEIGHTS.D2ITEM)
+        item_config_path = cfg.CONFIG.D2ITEM
+        item_weights_path = cfg.WEIGHTS.D2ITEM
         profile = ModelCatalog.get_profile(cfg.WEIGHTS.D2ITEM)
         categories_item = profile.categories
         d_item = D2FrcnnDetector(item_config_path, item_weights_path, categories_item, device=cfg.DEVICE)
@@ -191,9 +184,7 @@ class OCRDetector():
 
     def _init_text_extraction_service(self, cfg) -> TextExtractionService:
 
-        ocr_config_path = get_configs_dir_path() / cfg.CONFIG.VISION_OCR
-
-        d_vision_ocr = VisionOcrDetector(ocr_config_path)
+        d_vision_ocr = VisionOcrDetector(cfg.CONFIG.VISION_OCR)
         text = TextExtractionService(d_vision_ocr)
 
         return text

@@ -1,19 +1,19 @@
 CONFIG:
-  TPLAYOUT: dd/tp/conf_frcnn_layout.yaml
-  TPCELL: dd/tp/conf_frcnn_cell.yaml
-  TPITEM: dd/tp/conf_frcnn_rows.yaml
-  D2LAYOUT: dd/d2/layout/CASCADE_RCNN_R_50_FPN_GN.yaml
-  D2CELL: dd/d2/cell/CASCADE_RCNN_R_50_FPN_GN.yaml
-  D2ITEM: dd/d2/item/CASCADE_RCNN_R_50_FPN_GN.yaml
-  TESS_OCR: dd/conf_tesseract.yaml
-  VISION_OCR: dd/conf_vision.yaml
+  TPLAYOUT: models/configs/dd/tp/conf_frcnn_layout.yaml
+  TPCELL: models/configs/dd/tp/conf_frcnn_cell.yaml
+  TPITEM: models/configs/dd/tp/conf_frcnn_rows.yaml
+  D2LAYOUT: models/configs/dd/d2/layout/CASCADE_RCNN_R_50_FPN_GN.yaml
+  D2CELL: models/configs/dd/d2/cell/CASCADE_RCNN_R_50_FPN_GN.yaml
+  D2ITEM: models/configs/dd/d2/item/CASCADE_RCNN_R_50_FPN_GN.yaml
+  TESS_OCR: models/configs/dd/conf_tesseract.yaml
+  VISION_OCR: models/configs/dd/conf_vision.yaml
 WEIGHTS:
-  TPLAYOUT: layout/model-800000_inf_only.data-00000-of-00001
-  TPCELL: cell/model-1800000_inf_only.data-00000-of-00001
-  TPITEM: item/model-1620000_inf_only.data-00000-of-00001
-  D2LAYOUT: layout/d2_model_0829999_layout_inf_only.pt
-  D2CELL: cell/d2_model_1849999_cell_inf_only.pt
-  D2ITEM: item/d2_model_1639999_item_inf_only.pt
+  TPLAYOUT: models/weights/layout/model-800000_inf_only.data-00000-of-00001
+  TPCELL: models/weights/cell/model-1800000_inf_only.data-00000-of-00001
+  TPITEM: models/weights/item/model-1620000_inf_only.data-00000-of-00001
+  D2LAYOUT: models/weights/layout/d2_model_0829999_layout_inf_only.pt
+  D2CELL: models/weights/cell/d2_model_1849999_cell_inf_only.pt
+  D2ITEM: models/weights/item/d2_model_1639999_item_inf_only.pt
 SEGMENTATION:
   ASSIGNMENT_RULE: ioa
   IOU_THRESHOLD_ROWS: 0.01
