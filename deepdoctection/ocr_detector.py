@@ -20,6 +20,7 @@ from typing import Optional, List
 from deepdoctection.pipe.common import PageParsingService
 import numpy as np
 import pandas as pd
+import cv2 
 
 _DD_ONE = "deepdoctection/configs/conf_dd_one.yaml"
 _VISION = "deepdoctection/configs/conf_vision.yaml"
@@ -50,8 +51,8 @@ class OCRDetector():
         self.page_parser = self._init_page_parser_service()
 
     def predict(self, np_img: np.ndarray, table_detection_results: List[List[str]] = None) -> pd.DataFrame:
-        #TODO: RGB to BGR
-        dp_image = to_image(np_img)
+        bgr_np_img = cv2.cvtColor(np_img, cv2.COLOR_RGB2BGR)
+        dp_image = to_image(bgr_np_img)
 
         self.layout.dp_manager.datapoint = dp_image
         if table_detection_results:
