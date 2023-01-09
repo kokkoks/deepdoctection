@@ -30,4 +30,5 @@ bgr_image_as_np_array = np.array(images[5])
 
 ocr_detector = OCRDetector()
 
-page = ocr_detector.predict(bgr_image_as_np_array)
+page, dfs = ocr_detector.predict(bgr_image_as_np_array)
+print(dfs[0])

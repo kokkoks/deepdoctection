@@ -1,0 +1,3 @@
+gcloud storage cp gs://ptvn-document-ai/Deepdoctection/cell/d2_model_1849999_cell_inf_only.pt models/weights/cell/d2_model_1849999_cell_inf_only.pt
+gcloud storage cp gs://ptvn-document-ai/Deepdoctection/item/d2_model_1639999_item_inf_only.pt models/weights/item/d2_model_1639999_item_inf_only.pt
+gcloud storage cp gs://ptvn-document-ai/Deepdoctection/layout/d2_model_0829999_layout_inf_only.pt models/weights/layout/d2_model_0829999_layout_inf_only.pt
