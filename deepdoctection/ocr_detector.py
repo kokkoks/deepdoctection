@@ -71,7 +71,8 @@ class OCRDetector():
         self.text_extraction.serve(self.item.dp_manager.datapoint)
 
         self.table_segmentation.dp_manager.datapoint = dp_image
-        raw_table_segment_list = self.table_segmentation.serve(dp_image)
+        # run รอบแรกจะมี cell ที่ไม่มีค่าอยู่
+        self.table_segmentation.serve(dp_image)
 
         self.table_segmentation_refinement.dp_manager.datapoint = dp_image
         self.table_segmentation_refinement.serve(dp_image)
@@ -81,6 +82,9 @@ class OCRDetector():
         
         self.text_ordering.dp_manager.datapoint = dp_image
         self.text_ordering.serve(dp_image)
+
+        # run รอบสองค่าว่างจะหาย ไม่รู้ทำไม
+        raw_table_segment_list = self.table_segmentation.serve(dp_image)
 
         page = self.page_parser.pass_datapoint(dp_image)
 
